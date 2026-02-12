@@ -1,0 +1,29 @@
+name: nanapeth
+description: "Nana Peth at Your Doorstep – Same-Day Delivery! Shop from 500+ products across 100+ trusted local vendors."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  get: ^4.6.6
+  firebase_core: ^2.24.0
+  cloud_firestore: ^4.13.0
+  firebase_auth: ^4.15.0
+  cached_network_image: ^3.3.1
+  intl: ^0.19.0
+  get_storage: ^2.1.1
+  url_launcher: ^6.1.0
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
