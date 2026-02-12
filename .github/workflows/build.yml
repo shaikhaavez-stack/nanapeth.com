@@ -4,14 +4,12 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     
     steps:
       - name: Checkout code
@@ -22,6 +20,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -30,51 +29,40 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Configure Gradle
+      - name: Configure environment
         run: |
           mkdir -p ~/.gradle
           cat > ~/.gradle/gradle.properties << EOF
-          org.gradle.jvmargs=-Xmx3072m
+          org.gradle.jvmargs=-Xmx4g
           org.gradle.daemon=false
           org.gradle.parallel=true
+          org.gradle.workers.max=4
           android.useAndroidX=true
           android.enableJetifier=true
           EOF
 
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze --no-preamble
+
       - name: Build release APK
-        run: flutter build apk --release --verbose
+        run: flutter build apk --release --split-per-abi
 
-      - name: Build App Bundle (for Play Store)
-        run: flutter build appbundle --release --verbose
-
-      - name: Upload APK to artifacts
+      - name: Upload APK artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: build/app/outputs/apk/release/app-release.apk
+          name: app-release-apks
+          path: build/app/outputs/apk/release/
           retention-days: 30
 
-      - name: Upload AAB to artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-aab
-          path: build/app/outputs/bundle/release/app-release.aab
-          retention-days: 30
-
-      - name: Create Release
+      - name: Create Release on tag
         if: startsWith(github.ref, 'refs/tags/v') && success()
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/app/outputs/apk/release/app-release.apk
-            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/apk/release/**/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
